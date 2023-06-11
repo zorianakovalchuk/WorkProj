@@ -1,0 +1,860 @@
+﻿@using WorkProj.Services
+@{
+    ViewData["Title"] = "Home Page";
+    ViewBagHelper.SetIsLoggedInInViewBag(ViewContext);
+}
+
+@model UserViewModel
+
+<div class="wrapper">
+    <header class="header">
+        <div class="header__container">
+            <div class="header__content">
+                <a href="" class="header__logo">
+                    <img src="~/img/logo.svg" alt="">
+                </a>
+                <div class="header__search">
+                    <div class="header__search-icon-title">
+                        <div class="header__search-icon">
+                            <img src="~/img/search.svg" alt="">
+                        </div>
+                        <input class="header__search__title" placeholder="Знайти книгу" />
+
+                    </div>
+
+                    <div class="header__search__button">Пошук</div>
+                </div>
+                <div class="header__icons">
+                    <div class="header__icon">
+                        <img class="header__icon__selected icon" src="~/img/selected.svg" alt="">
+                    </div>
+                    <div class="header__icon">
+                        <img class="header__icon__basket icon" src="~/img/basket.svg" alt="">
+                    </div>
+                    <div class="header__icon" id="modalButton">
+                        <img class="header__icon__user icon" src="~/img/user.svg" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div id="overlay"></div>
+    <div id="popup">
+        <div class="popup__basket">
+            <div class="popup__header">
+                <div class="popup__header__info">
+                    <div class="popup__header__title">Кошик товарів</div>
+                    <div class="popup__amount">@(UserViewModel.User?.CartBooks?.Count() ?? 0) </div>
+                </div>
+                <div class="popup__close">
+                    <img class="popup__close__icon" src="img/close.svg" alt="">
+                </div>
+            </div>
+            @if (UserViewModel.User?.CartBooks is null || UserViewModel.User?.CartBooks?.Count() == 0)
+            {
+                <div class="popup__empty">
+                    <div class="popup__empty__img">
+                        <img class="empty__img" src="~/img/empty-basket.svg" alt="">
+                    </div>
+                    <div class="popup__empty__text">Кошик порожній</div>
+                    <div class="popup__empty__button">Продовжити покупки</div>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in UserViewModel.User?.CartBooks)
+                {
+                    <div class="popup__book__info">
+                        <div class="popup__book__info_look">
+                            <div class="popup__book__img">
+                                <img class="selected__book__img" width="83" height="117" src="~/@item.ImageUrl" alt="">
+                            </div>
+                            <div class="popup__book__text">
+                                <div class="popup__book__author">@item.Author</div>
+                                <div class="popup__empty__title">@item.Title</div>
+                                <div class="book__amount__choose"> 
+                                    <div class="book__amount__less">-</div>
+                                    <div class="book__amount__current">1</div>
+                                    <div class="book__amount__more">+</div>
+                                </div>
+                            </div>        
+                        </div>   
+                        <div class="book__selected__actions">
+                            <a asp-controller="Home" asp-action="deleteBuy" asp-route-bookId="@item.Id">
+                                <div class="book__selected__delete">
+                                    <img src="~/img/delete-selected.svg" alt="" class="book__delete">
+                                </div>
+                            </a>
+                            <div class="book__selected__price">
+                                @item.Price грн
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+
+            <div class="popup__bottom">
+                <div class="popup__bottom__info">
+                    <div class="popup__bottom__text">Разом до оплати, без доставки</div>
+                    <div class="popup__bottom__sum">@UserViewModel.TotalPrice() грн</div>
+                </div>
+                <div class="popup__bottom__button">оформити</div>
+            </div>
+        </div>
+    </div>
+    <div id="popupSelected">
+    <div class="popup__basket">
+        <div class="popup__header">
+            <div class="popup__header__info">
+                <div class="popup__header__title">Обрані товари</div>
+                <div class="popup__amount">@(UserViewModel.User?.FavoriteBooks?.Count() ?? 0)</div>
+            </div>
+            <div class="popup__close">
+                <img class="popup__close__icon" src="~/img/close.svg" alt="">
+            </div>
+        </div>
+        @if (UserViewModel.User?.FavoriteBooks is null || UserViewModel.User?.FavoriteBooks?.Count() == 0)
+        {
+            <div class="popup__empty">
+                <div class="popup__empty__img">
+                    <img class="empty__img" src="~/img/two-heart.svg" alt="">
+                </div>
+                <div class="popup__empty__text">Обрані товари відсутні</div>
+                <div class="popup__empty__button">Продовжити покупки</div>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in UserViewModel.User?.FavoriteBooks)
+            {
+                <div class="popup__book__info">
+                    <div class="popup__book__info_look">
+                        <div class="popup__book__img">
+                                <img class="selected__book__img" width="83" height="117" src="~/@item.ImageUrl" alt="">
+                        </div>
+                        <div class="popup__book__text">
+                            <div class="popup__book__author">@item.Author</div>
+                            <div class="popup__empty__title">@item.Title</div>
+                            <div class="book__price__info">
+                                <div class="book__wallet__img">
+                                        <img src="~/img/wallet-icon.svg" alt="">
+                                </div>
+                                <div class="book__selected__price">
+                                    @item.Price грн
+                                </div>
+                            </div>
+                        </div>        
+                    </div>   
+                    <div class="book__selected__actions">
+                        <a asp-controller="Home" asp-action="Favorite" asp-route-bookId="@item.Id">
+                            <div class="book__selected__delete">
+                                <img src="~/img/delete-selected.svg" alt="" class="book__delete">
+                            </div>
+                        </a>
+                        <a asp-controller="Home" asp-action="Buy" asp-route-bookId="@item.Id">
+                            <div class="book__selected__buy">
+                                <img src="~/img/book-buy.svg" alt="" class="book__buy">
+                            </div>
+                        </a>
+
+                    </div>
+                </div>
+            }
+        }
+
+        <div class="popup__bottom">
+            <div class="popup__bottom__button basket__button">Кошик товарів</div>
+            <div class="popup__bottom__button continue__button">Продовжити покупки</div>
+        </div>
+    </div>
+</div>
+    <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filterModalLabel">Меню користувача</h5>
+                    <a id="closeCrest" class="close text-decoration-none close-custom text-black cursor" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </a>
+                </div>
+                <div class="modal-body d-flex flex-column justify-content-between">
+                    @if (!(bool)ViewBag.IsLoggedIn)
+                    {
+                        <div class="tabs">
+                            <button class="tab active" id="loginTab" onclick="changeTab('login')">Вхід</button>
+                            <button class="tab" id="registrationTab" onclick="changeTab('registration')">Реєстрація</button>
+                        </div>
+                    }
+                    <div class="content">
+                        @if (!(bool)ViewBag.IsLoggedIn)
+                        {
+                            <div class="d-flex justify-content-center align-items-center flex-column gap-2" id="loginContent">
+                                <form class="registration__form" asp-controller="Home" asp-action="SignIn" method="post">
+                                    <input class="registration__input" type="text" id="username-login" name="Email" placeholder="Ім'я*" onfocus="changeBorderColor(this)" onblur="restoreBorderColor(this)" required>
+                                    <span class="text-danger">
+                                        @if (!string.IsNullOrEmpty(ViewData.ModelState["Email"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                        {
+                                            @ViewData.ModelState["Email"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                        }
+                                    </span>
+
+                                    <div class="password-field">
+                                        <input class="registration__input input__password" name="Password" type="password" id="password-input-login" placeholder="Пароль*">
+
+                                    </div>
+                                    <span class="text-danger">
+                                        @if (!string.IsNullOrEmpty(ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                        {
+                                            @ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                        }
+                                    </span>
+                                    <div class="forget__password">
+                                        <a href="" class="forget__password__link">Забули пароль?</a>
+                                    </div>
+
+
+
+                                    <button class="login__button registration__input " class="registration__input" type="submit">Ввійти</button>
+                                    <div class="account__exist">
+                                        <div class="account__exist__text">Немає аккаунту?</div>
+                                        <div class="account__exist_link" id="registerModal">Зареєструватись</div>
+                                    </div>
+                                </form>
+
+                            </div>
+                            <div class="d-flex justify-content-center align-items-center flex-column gap-2 d-none " id="registrationContent">
+
+                                <form class="registration__form" asp-controller="Home" asp-action="SignUp" method="post">
+                                    <input class="registration__input" type="text" name="FirstName" placeholder="Ім'я*" onfocus="changeBorderColor(this)" onblur="restoreBorderColor(this)" required>
+                                    <span class="text-danger">
+                                        @if (!string.IsNullOrEmpty(ViewData.ModelState["FirstName"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                        {
+                                            @ViewData.ModelState["FirstName"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                        }
+                                    </span>
+                                    <input class="registration__input" type="text" name="LastName" placeholder="Прізвище*" onfocus="changeBorderColor(this)" onblur="restoreBorderColor(this)" required>
+                                    <span class="text-danger">
+                                        @if (!string.IsNullOrEmpty(ViewData.ModelState["LastName"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                        {
+                                            @ViewData.ModelState["LastName"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                        }
+                                    </span>
+                                    <input class="registration__input" type="email" id="email" name="email" placeholder="E-mail*" required>
+                                    <span class="text-danger">
+                                        @if (!string.IsNullOrEmpty(ViewData.ModelState["Email"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                        {
+                                            @ViewData.ModelState["Email"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                        }
+                                    </span>
+                                    <div class="password-field">
+                                        <input class="registration__input input__password" type="password" name="Password" id="password-input" placeholder="Пароль*">
+
+                                    </div>
+                                    <span class="text-danger">
+                                        @if (!string.IsNullOrEmpty(ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                        {
+                                            @ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                        }
+                                    </span>
+                                    <div class="password-field">
+                                        <input class="registration__input input__password" type="password" name="ConfirmPassword" id="confirm-password-input" placeholder="Підтвердіть Пароль*">
+
+                                    </div>
+                                    <span class="text-danger">
+                                        @if (!string.IsNullOrEmpty(ViewData.ModelState["ConfirmPassword"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                        {
+                                            @ViewData.ModelState["ConfirmPassword"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                        }
+                                    </span>
+                                    <div class="agreement__info d-flex flex-row gap-1">
+                                        <div class="agreement__info__text">Реєструючись, ви погоджуєтесь з </div>
+                                        <div class="agreement__link"> Угодою користувача</div>
+                                    </div>
+
+
+                                    <button class="registration__button registration__input " class="registration__input" type="submit">Зареєструватися</button>
+                                    <div class="account__exist">
+                                        <div class="account__exist__text">Вже є аккаунт?</div>
+                                        <div class="account__exist_link" id="loginModal">Увійти</div>
+                                    </div>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex justify-content-center align-items-center flex-column gap-2">
+                                <span>Ви знаходитеся в меню користувача, <br>Щоб вийти з аккаунту, нажміть на кнопку нижче</span>
+                                <a class="buy d-flex justify-content-center align-items-center" asp-controller="Home" asp-action="LogOut">Вийти</a>
+                            </div>
+                        }
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="header header--scrolled">
+        <div class="header__container">
+            <div class="header__content header__content__scrolled">
+                <a href="" class="header__logo header__logo__scrolled">
+                    <img src="~/img/logo-scrolled.svg" alt="">
+                </a>
+
+                <div class="menu__body menu__body__scrolled">
+                    <ul class="menu__list menu__list__scrolled">
+                        <li class="menu__list menu__list__scrolled">
+                            <a href="index.html" class="menu__link menu__link__scrolled">Акції %</a>
+                        </li>
+                        <li class="menu__list menu__list__scrolled">
+                            <a href="" class="menu__link menu__link__scrolled">Книги</a>
+                        </li>
+                        <li class="menu__list menu__list__scrolled">
+                            <a href="index2.html" class="menu__link__scrolled">Канцтовари та ігри</a>
+                        </li>
+                        <li class="menu__list menu__list__scrolled">
+                            <a href="" class="menu__link__scrolled">Навчальна література</a>
+                        </li>
+                        <li class="menu__list menu__list__scrolled">
+                            <a href="" class="menu__link__scrolled">Комікси та манга</a>
+                        </li>
+                        <li class="menu__list menu__list__scrolled">
+                            <a href="" class="menu__link__scrolled">Подарунки та сувеніри</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="header__icons header__icons__scrolled">
+                    <div class=" header__search__scrolled">
+                        <div class="header__search-icon__scrolled__img ">
+                            <img class="header__search-icon__scrolled" src="~/img/search-scrolled.svg" alt="">
+                        </div>
+                    </div>
+                    <div class="header__icon header__icon__scrolled">
+                        <img class="header__icon__selected icon header__icon__selected__scrolled" src="~/img/selected-scrolled.svg" alt="">
+                    </div>
+                    <div class="header__icon header__icon__scrolled">
+                        <img class="header__icon__basket icon header__icon__basket__scrolled" src="~/img/basket-scrolled.svg" alt="">
+                    </div>
+                    <div class="header__icon header__icon__scrolled" id="modalScrolledButton">
+                        <img class="header__icon__user icon header__icon__user__scrolled" src="~/img/user-scrolled.svg" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var filterModal = document.getElementById('filterModal');
+            var modalButton = document.getElementById('modalButton');
+            var modalScrollButton = document.getElementById('modalScrolledButton');
+            var closeCrest = document.getElementById('closeCrest');
+
+            var options = {
+                backdrop: 'static',
+                keyboard: false
+            };
+
+            var modal = new bootstrap.Modal(filterModal, options);
+
+            if ('@ViewBag.isOpened' === 'True') {
+                modal.show();
+            }
+
+            modalButton.addEventListener('click', function () {
+                modal.show();
+            });
+
+            modalScrollButton.addEventListener('click', function () {
+                modal.show();
+            });
+
+            closeCrest.addEventListener('click', function () {
+                modal.hide();
+            });
+
+        });
+
+    </script>
+    <div class="header__main__category__container">
+        <nav class="header__menu menu">
+            <div class="menu__body">
+                <ul class="menu__list">
+                    <div class="category">
+                    <li class="menu__list">
+                        <a href="index.html" class="menu__link">Акції %</a>
+                    </li>
+                    <div class="subcategory">
+                        <div class="subcategory__block">
+                            <div class="subcategory__block__title">Non-fiction</div>
+                            <div class="subcategory__block__list">
+                                <ul class="subcategory__items">
+                                    <li class="subcategory__item">Бізнес література</li>
+                                    <li class="subcategory__item">Журнал Forbes</li>
+                                    <li class="subcategory__item">Журнал Особистості</li>
+                                    <li class="subcategory__item">Психологія</li>
+                                    <li class="subcategory__item">Прикладна література</li>
+                                    <li class="subcategory__item subcategory__open__all">Дивитись всі</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+            </div>
+
+            <li class="menu__list">
+                <a href="" class="menu__link">Книги</a>
+            </li>
+            <li class="menu__list">
+                <a href="index2.html" class="menu__link">Канцтовари та ігри</a>
+            </li>
+            <li class="menu__list">
+                <a href="" class="menu__link">Навчальна література</a>
+            </li>
+            <li class="menu__list">
+                <a href="" class="menu__link">Комікси та манга</a>
+            </li>
+            <li class="menu__list">
+                <a href="" class="menu__link">Подарунки та сувеніри</a>
+            </li>
+            </ul>
+    </div>
+    </nav>
+</div>
+</div>
+
+<div class="main__category__container">
+    <div class="category__items">
+        <div class="category__item">
+            <div class="category__imgs">
+                <div class="category_img">
+                    <img src="~/img/category/category_1-01.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-02.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-03.jpg" alt="">
+                </div>
+            </div>
+            <div class="category__title">
+                Бізнес-література
+            </div>
+        </div>
+        <div class="category__item">
+            <div class="category__imgs">
+                <div class="category_img">
+                    <img src="~/img/category/category_1-01.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-02.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-03.jpg" alt="">
+                </div>
+            </div>
+            <div class="category__title">
+                Навчальна література
+            </div>
+        </div>
+        <div class="category__item">
+            <div class="category__imgs">
+                <div class="category_img">
+                    <img src="~/img/category/category_1-01.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-02.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-03.jpg" alt="">
+                </div>
+            </div>
+            <div class="category__title">
+                Комікси та манга
+            </div>
+        </div>
+        <div class="category__item">
+            <div class="category__imgs">
+                <div class="category_img">
+                    <img src="~/img/category/category_1-01.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-02.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-03.jpg" alt="">
+                </div>
+            </div>
+            <div class="category__title">
+                Дитяча література
+            </div>
+        </div>
+        <div class="category__item">
+            <div class="category__imgs">
+                <div class="category_img">
+                    <img src="~/img/category/category_1-01.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-02.jpg" alt="">
+                </div>
+                <div class="category_img">
+                    <img src="~/img/category/category_1-03.jpg" alt="">
+                </div>
+            </div>
+            <div class="category__title">
+                Психологія
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="category__divider">
+    <div class="category__divider-text">
+        <div class="category__divider-name">ТОП товари</div>
+        <div class="category__divider-more"><a class="d-flex justify-content-center align-items-center flex-row" asp-controller="Home" asp-action="BookList">дивитись все <img class="arrow" src="~/img/arrow.svg"></a></div>
+    </div>
+    <div class="line"></div>
+</div>
+<div class="new__container">
+    <div class="book__items">
+        @for (int i = 0; i < 5; i++)
+        {
+            <a asp-controller="Book" asp-action="Index" asp-route-id="@UserViewModel.Books[i].Id">
+                <div class="book_item">
+                    <div class="book__img">
+                        <img src="~/@UserViewModel.Books[i].ImageUrl" alt="" width="167" height="235">
+                        <div class="badges">
+                            <span class="new-badge">new</span>
+                            <span class="popular-badge">top</span>
+                        </div>
+                        <div class="book__actions">
+
+                            <a asp-controller="Home" asp-action="Favorite" asp-route-bookId="@UserViewModel.Books[i].Id">
+                                <div class="book__item__select">
+                                    <img class="book__select" src="~/img/heart.svg" alt="">
+                                </div>
+                            </a>
+                            <div class="book__item__zoom">
+                                <img class="book__zoom" src="~/img/search-icon.svg" alt="">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="book__title">
+                        @UserViewModel.Books[i].Title
+                    </div>
+                    <div class="book__author">
+                        @UserViewModel.Books[i].Author
+                    </div>
+                    <div class="book__bottom">
+                        <div class="book__price__info">
+                            <div class="img__wallet">
+                                <img src="img/wallet.svg" alt="">
+                            </div>
+                            <div class="book__price">@UserViewModel.Books[i].Price грн</div>
+                        </div>
+                        <div class="book__buy">
+                            <form action="@Url.Action("Buy", "Home")" method="get">
+                                <input type="hidden" name="bookId" value="@UserViewModel.Books[i].Id" />
+                                <button type="submit" class="text-decoration-none buy">КУПИТИ</button>
+                            </form>
+
+
+                        </div>
+                    </div>
+
+                </div>
+            </a>
+        }
+
+    </div>
+</div>
+<div class="category__divider">
+    <div class="category__divider-text">
+        <div class="category__divider-name">Новинки</div>
+        <div class="category__divider-more"><a class="d-flex justify-content-center align-items-center flex-row" asp-controller="Home" asp-action="BookList">дивитись все <img class="arrow" src="~/img/arrow.svg"></a></div>
+    </div>
+    <div class="line"></div>
+</div>
+<div class="new__container">
+    <div class="book__items">
+        @for (int i = 5; i < 10; i++)
+        {
+            <a asp-controller="Book" asp-action="Index" asp-route-id="@UserViewModel.Books[i].Id">
+                <div class="book_item">
+                    <div class="book__img">
+                        <img src="~/@UserViewModel.Books[i].ImageUrl" width="167" height="235" alt="">
+                        <div class="badges">
+                            <span class="new-badge">new</span>
+                            <span class="popular-badge">top</span>
+                        </div>
+                        <div class="book__actions">
+
+                            <a asp-controller="Home" asp-action="Favorite" asp-route-bookId="@UserViewModel.Books[i].Id">
+                                <div class="book__item__select">
+                                    <img class="book__select" src="~/img/heart.svg" alt="">
+                                </div>
+                            </a>
+                            <div class="book__item__zoom">
+                                <img class="book__zoom" src="img/search-icon.svg" alt="">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="book__title">
+                        @UserViewModel.Books[i].Title
+                    </div>
+                    <div class="book__author">
+                        @UserViewModel.Books[i].Author
+                    </div>
+                    <div class="book__bottom">
+                        <div class="book__price__info">
+                            <div class="img__wallet">
+                                <img src="img/wallet.svg" alt="">
+                            </div>
+                            <div class="book__price">@UserViewModel.Books[i].Price грн</div>
+                        </div>
+                        <div class="book__buy">
+                            <form action="@Url.Action("Buy", "Home")" method="get">
+                                <input type="hidden" name="bookId" value="@UserViewModel.Books[i].Id" />
+                                <button type="submit" class="text-decoration-none buy">КУПИТИ</button>
+                            </form>
+
+                        </div>
+                    </div>
+
+                </div>
+            </a>
+        }
+    </div>
+</div>
+<div class="category__divider">
+    <div class="category__divider-text">
+        <div class="category__divider-name">Рекомендуємо</div>
+        <div class="category__divider-more"><a class="d-flex justify-content-center align-items-center flex-row" asp-controller="Home" asp-action="BookList">дивитись все <img class="arrow" src="~/img/arrow.svg"></a></div>
+    </div>
+    <div class="line"></div>
+</div>
+<div class="new__container">
+    <div class="book__items">
+        @for (int i = 10; i < 15; i++)
+        {
+            <a asp-controller="Book" asp-action="Index" asp-route-id="@UserViewModel.Books[i].Id">
+                <div class="book_item">
+                    <div class="book__img">
+                        <img src="~/@UserViewModel.Books[i].ImageUrl" width="167" height="235" alt="">
+                        <div class="badges">
+                            <span class="new-badge">new</span>
+                            <span class="popular-badge">top</span>
+                        </div>
+                        <div class="book__actions">
+
+                            <a asp-controller="Home" asp-action="Favorite" asp-route-bookId="@UserViewModel.Books[i].Id">
+                                <div class="book__item__select">
+                                    <img class="book__select" src="~/img/heart.svg" alt="">
+                                </div>
+                            </a>
+                            <div class="book__item__zoom">
+                                <img class="book__zoom" src="img/search-icon.svg" alt="">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="book__title">
+                        @UserViewModel.Books[i].Title
+                    </div>
+                    <div class="book__author">
+                        @UserViewModel.Books[i].Author
+                    </div>
+                    <div class="book__bottom">
+                        <div class="book__price__info">
+                            <div class="img__wallet">
+                                <img src="img/wallet.svg" alt="">
+                            </div>
+                            <div class="book__price">@UserViewModel.Books[i].Price грн</div>
+                        </div>
+                        <div class="book__buy">
+                            <form action="@Url.Action("Buy", "Home")" method="get">
+                                <input type="hidden" name="bookId" value="@UserViewModel.Books[i].Id" />
+                                <button type="submit" class="text-decoration-none buy">КУПИТИ</button>
+                            </form>
+
+                        </div>
+                    </div>
+
+                </div>
+            </a>
+        }
+    </div>
+</div>
+<div class="about__container">
+    <div class="about__info">
+        <div class="about__title">Cozy Library - книжковий онлайн-магазин в Україні</div>
+        <div class="about__text">
+            <p>
+                Ласкаво просимо до нашого книжкового магазину!<br><br>
+
+                У нашому магазині ми пропонуємо широкий вибір книжок з різних жанрів та для різних вікових груп. Незалежно від вашого смаку чи інтересів, у нас ви знайдете щось цікаве для себе.<br><br>
+
+                Ми пишаємося нашою колекцією класичної літератури, яка включає в себе твори відомих авторів минулих епох. Ви можете знайти тут шедеври Вільяма Шекспіра, Шарля Діккенса, Джейн Остін та багатьох інших.<br><br>
+
+                Якщо ви бажаєте відпочити та зануритися в захопливі пригоди, у нашому магазині ви знайдете широкий вибір романів, детективів, фентезі, науково-фантастичних творів та інших жанрів. Відкрийте для себе нових авторів та світи, які вони створюють.<br><br>
+
+                Для наших молодших читачів ми пропонуємо чудовий вибір дитячої літератури. Від казок до пригодницьких оповідань, наші книжки допоможуть розвивати уяву та виховувати любов до читання.<br><br>
+
+                Ми також маємо секцію з психології, саморозвитку та науково-популярних книг. Якщо ви зацікавлені в розумінні людської природи, покращенні особистості та вивченні нових галузей знань, у нас є щось цікаве для вас.<br><br>
+
+                Наші привітні та компетентні працівники завжди готові надати вам рекомендації та допомогти з вибором книги. Ми пишаємося якістю наших товарів та відмінним обслуговуванням.<br><br>
+
+                Завітайте до нашого книжкового магазину сьогодні і відкрийте для себе чарівний світ літератури!
+            </p>
+        </div>
+    </div>
+</div>
+<div class="offer__container">
+    <div class="offer__block">
+        <div class="offer__img__text">
+            <div class="offer__img">
+                <img src="~/img/offer.svg" alt="">
+            </div>
+            <div class="offer__text">
+                <div class="offer__title">Отримуйте персональні пропозиції</div>
+                <div class="offer__detail">Дізнавайтесь першими про всі новинки та закриті пропозиції!</div>
+            </div>
+        </div>
+        <div>
+            <form class="offer__form" asp-controller="Home" asp-action="OfferPropositions" method="post">
+                <input class="offer__email-text offer__email" name="Email" placeholder="Введіть e-mail" />
+                <button class="offer__button" type="submit">Підписатись</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<footer>
+    <div class="footer__container">
+        <div class="footer">
+            <div class="contact__block">
+                <div class="delivery">
+                    <div class="delivery__img">
+                        <img src="~/img/delivery.svg" alt="">
+                    </div>
+                    <div class="delivery__info">
+                        <div class="delivery__title">
+                            Безкоштовно по Україні
+                        </div>
+                        <div class="delivery__text">
+                            Без вихідних, з 8 до 21
+                        </div>
+                    </div>
+                </div>
+                <div class="contact">
+                    <div class="contact__img">
+                        <img src="~/img/phone.svg" alt="">
+                    </div>
+                    <div class="contact__info">
+                        <div class="contact__title">
+                            Контакти
+                        </div>
+                        <div class="contact__text">
+                            0-800-335-425
+                        </div>
+                        <div class="contact__text">
+                            books@cozylibrary.com.ua
+                        </div>
+                        <div class="contact__social-media">
+                            <img src="~/img/instagram.svg" alt="" class="social-media">
+                            <img src="~/img/facebook.svg" alt="" class="social-media">
+                            <img src="~/img/telegram.svg" alt="" class="social-media">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="catalog">
+                <div class="catalog__title">Каталог</div>
+                <div class="catalog__menu">
+                    <ul class="catalog__menu__list">
+                        <li class="catalog__menu__list__item">
+                            <a href="index.html" class="catalog__menu__link">Акції %</a>
+                        </li>
+                        <li class="catalog__menu__list__item">
+                            <a href="index.html" class="catalog__menu__link">Книги</a>
+                        </li>
+                        <li class="catalog__menu__list__item">
+                            <a href="index.html" class="catalog__menu__link">Канцтовари та ігри</a>
+                        </li>
+                        <li class="catalog__menu__list__item">
+                            <a href="index.html" class="catalog__menu__link">Навчальна література</a>
+                        </li>
+                        <li class="catalog__menu__list__item">
+                            <a href="index.html" class="catalog__menu__link">Комікси та манга</a>
+                        </li>
+                        <li class="catalog__menu__list__item">
+                            <a href="index.html" class="catalog__menu__link">Подарунки та сувеніри</a>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+            <div class="additional">
+                <div class="mobile__app">
+                    <div class="app__title">Мобільний застосунок</div>
+                    <div class="app__text">Читайте і прослуховуйте книжки у найбільшій бібліотеці електронних та аудіокниг від топових українських і світових авторів</div>
+                    <div class="app__buttons">
+                        <div class="app__button">
+                            <div class="app__button__img">
+                                <img src="~/img/google-play.svg" alt="">
+                            </div>
+                            <div class="app__button__info">
+                                <div class="app__button__text">
+                                    GET IT ON
+                                </div>
+                                <div class="app__button__title">Google Play</div>
+                            </div>
+                        </div>
+                        <div class="app__button">
+                            <div class="app__button__img">
+                                <img src="~/img/apple.svg" alt="">
+                            </div>
+                            <div class="app__button__info">
+                                <div class="app__button__text">
+                                    Download on the
+                                </div>
+                                <div class="app__button__title">App Store</div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+                <div class="payment">
+                    <div class="payment__title">Приймаємо всі види оплати</div>
+                    <div class="payment__methods">
+                        <div class="payment__method">
+                            <img src="img/visa.svg" alt="">
+                        </div>
+                        <div class="payment__method">
+                            <img src="img/mastercard.svg" alt="">
+                        </div>
+                        <div class="payment__method">
+                            <img src="img/privatbank.svg" alt="">
+                        </div>
+                        <div class="payment__method">
+                            <img src="img/google-pay.svg" alt="">
+                        </div>
+                        <div class="payment__method">
+                            <img src="img/apple-pay.svg" alt="">
+                        </div>
+                        <div class="payment__method">
+                            <img src="img/liqpay.svg" alt="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
